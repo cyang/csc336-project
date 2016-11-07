@@ -1,3 +1,4 @@
+#!/usr/bin/php
 <?php
 
 $host = "134.74.126.107";
@@ -37,8 +38,8 @@ if ($r_2->num_rows > 0) {
     echo "0 results";
 }
 
-$q_3 = "SELECT SUM(qty*titles.price*discount/100) as gross_revenue from salesdetail INNER JOIN titles ON salesdetail.title_id=titles.title_id;"
-echo $q_3 . "<br>"
+$q_3 = "SELECT SUM(qty*titles.price*discount/100) as gross_revenue from salesdetail INNER JOIN titles ON salesdetail.title_id=titles.title_id;";
+echo $q_3 . "<br>";
 $r_3 = $db->query($q_3);
 if ($r_3->num_rows > 0) {
     // output data of each row
@@ -49,8 +50,8 @@ if ($r_3->num_rows > 0) {
     echo "0 results";
 }
 
-$q_4 = "SELECT stor_id, ord_num, SUM(qty*titles.price*discount/100) as gross_revenue FROM salesdetail INNER JOIN titles ON salesdetail.title_id=titles.title_id GROUP BY ord_num;"
-echo $q_4 . "<br>"
+$q_4 = "SELECT stor_id, ord_num, SUM(qty*titles.price*discount/100) as gross_revenue FROM salesdetail INNER JOIN titles ON salesdetail.title_id=titles.title_id GROUP BY ord_num;";
+echo $q_4 . "<br>";
 $r_4 = $db->query($q_4);
 if ($r_4->num_rows > 0) {
     // output data of each row
