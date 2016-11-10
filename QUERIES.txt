@@ -41,6 +41,26 @@ left join (
 on disc.ord_num=salesdetail.ord_num
 group by titles.title_id
 
+UPDATE GROSS REVENUE FROM SALES IN TITLES TABLE:
+UPDATE titles, (
+	select titles.title_id, titles.price, sum(disc.qtyTotal) as totalQuantity,
+sum((titles.price*disc.qtyTotal)*(1-(disc.discount/100))) as grossRevenue
+	from salesdetail
+	left join titles
+	ON titles.title_id=salesdetail.title_id
+	left join (
+		select ord.ord_num, ord.stor_id, ord.qtyTotal,
+coalesce(max(discounts.discount),0) as discount
+		from(SELECT *, SUM(qty) as qtyTotal FROM salesdetail GROUP BY ord_num)
+as ord
+		left JOIN discounts
+		ON discounts.stor_id=ord.stor_id and discounts.lowqty <= ord.qtyTotal
+and discounts.highqty >= ord.qtyTotal
+		GROUP BY ord.ord_num) as disc
+	on disc.ord_num=salesdetail.ord_num
+	group by titles.title_id) as revenue
+set titles.gross_revenue = revenue.grossRevenue
+where titles.title_id = revenue.title_id
 
 CALCULATE AUTHOR ROYALTY FOR ALL SALES:
 
