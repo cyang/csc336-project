@@ -1,0 +1,62 @@
+GET DISCOUNT TO THE STORE BASED ON ORDER SIZE:
+
+select ord.ord_num, ord.stor_id, coalesce(max(discounts.discount),0) as discount
+	from(SELECT *, SUM(qty) as qtyTotal FROM salesdetail GROUP BY ord_num) as ord
+	left JOIN discounts
+	ON discounts.stor_id=ord.stor_id and discounts.lowqty <= ord.qtyTotal and discounts.highqty >= ord.qtyTotal
+	GROUP BY ord.ord_num;
+
+	
+GET DISCOUNT TO THE STORE BASED ON TOTAL QUANTITY OF ALL ORDERS:
+
+select ord.stor_id, ord.qtyTotal, coalesce(max(discounts.discount),0) as discount
+	from(SELECT *, SUM(qty) as qtyTotal FROM salesdetail GROUP BY stor_id) as ord
+	left JOIN discounts
+	ON discounts.stor_id=ord.stor_id and discounts.lowqty <= ord.qtyTotal and discounts.highqty >= ord.qtyTotal
+	GROUP BY ord.ord_num
+
+	
+UPDATE TOTAL SALES IN TITLES TABLE:
+
+UPDATE titles,(
+    SELECT salesdetail.title_id, SUM(qty) as total_sales
+    FROM salesdetail
+    GROUP BY title_id) as ord
+set titles.total_sales=ord.total_sales
+where titles.title_id=ord.title_id
+
+
+CALCULATE GROSS REVENUE FROM SALES:
+
+select titles.title_id, titles.price, sum(disc.qtyTotal) as totalQuantity, sum((titles.price*disc.qtyTotal)*(1-(disc.discount/100))) as grossRevenue
+from salesdetail
+left join titles
+ON titles.title_id=salesdetail.title_id
+left join (
+	select ord.ord_num, ord.stor_id, ord.qtyTotal, coalesce(max(discounts.discount),0) as discount
+	from(SELECT *, SUM(qty) as qtyTotal FROM salesdetail GROUP BY ord_num) as ord
+	left JOIN discounts
+	ON discounts.stor_id=ord.stor_id and discounts.lowqty <= ord.qtyTotal and discounts.highqty >= ord.qtyTotal
+	GROUP BY ord.ord_num) as disc
+on disc.ord_num=salesdetail.ord_num
+group by titles.title_id
+
+
+CALCULATE AUTHOR ROYALTY FOR ALL SALES:
+
+select titleauthor.au_id, revenues.grossRevenue*(titleauthor.royaltyper/100) as totalPay
+from titleauthor
+left join
+(select titles.title_id, titles.price, sum(disc.qtyTotal) as totalQuantity, sum((titles.price*disc.qtyTotal)*(1-(disc.discount/100))) as grossRevenue
+	from salesdetail
+	left join titles
+	ON titles.title_id=salesdetail.title_id
+	left join (
+	select ord.ord_num, ord.stor_id, ord.qtyTotal, coalesce(max(discounts.discount),0) as discount
+	from(SELECT *, SUM(qty) as qtyTotal FROM salesdetail GROUP BY ord_num) as ord
+	left JOIN discounts
+	ON discounts.stor_id=ord.stor_id and discounts.lowqty <= ord.qtyTotal and discounts.highqty >= ord.qtyTotal
+	GROUP BY ord.ord_num) as disc
+	on disc.ord_num=salesdetail.ord_num
+	group by titles.title_id) as revenues
+on titleauthor.title_id=revenues.title_id
